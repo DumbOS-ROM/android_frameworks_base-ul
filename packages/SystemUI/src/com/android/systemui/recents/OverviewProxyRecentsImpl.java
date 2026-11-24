@@ -17,6 +17,8 @@
 package com.android.systemui.recents;
 
 import android.content.Context;
+import android.os.UserHandle;
+import android.content.Intent;
 import android.os.Handler;
 import android.os.RemoteException;
 import android.util.Log;
@@ -35,6 +37,7 @@ import javax.inject.Inject;
 public class OverviewProxyRecentsImpl implements RecentsImplementation {
 
     private final static String TAG = "OverviewProxyRecentsImpl";
+    private Context mContext;
     private Handler mHandler;
     private final OverviewProxyService mOverviewProxyService;
     private final ActivityStarter mActivityStarter;
@@ -53,6 +56,7 @@ public class OverviewProxyRecentsImpl implements RecentsImplementation {
 
     @Override
     public void onStart(Context context) {
+        mContext = context;
         mHandler = new Handler();
     }
 
@@ -65,6 +69,8 @@ public class OverviewProxyRecentsImpl implements RecentsImplementation {
             } catch (RemoteException e) {
                 Log.e(TAG, "Failed to send overview show event to launcher.", e);
             }
+        } else {
+            launchDumbOsRecents("com.dumbos.launcher.ACTION_SHOW_RECENTS");
         }
     }
 
@@ -82,28 +88,44 @@ public class OverviewProxyRecentsImpl implements RecentsImplementation {
 
     @Override
     public void toggleRecentApps() {
-        // If connected to launcher service, let it handle the toggle logic
-        IOverviewProxy overviewProxy = mOverviewProxyService.getProxy();
-        if (overviewProxy != null) {
-            final Runnable toggleRecents = () -> {
+        // If connected to launcher service, let it handle the toggle logic;
+        // otherwise fall back to DumbLauncher's single-process OLED RecentsActivity.
+        final Runnable toggleRecents = () -> {
+            IOverviewProxy overviewProxy = mOverviewProxyService.getProxy();
+            if (overviewProxy != null) {
                 try {
-                    if (mOverviewProxyService.getProxy() != null) {
-                        mOverviewProxyService.getProxy().onOverviewToggle();
-                        mOverviewProxyService.notifyToggleRecentApps();
-                    }
+                    overviewProxy.onOverviewToggle();
+                    mOverviewProxyService.notifyToggleRecentApps();
                 } catch (RemoteException e) {
                     Log.e(TAG, "Cannot send toggle recents through proxy service.", e);
                 }
-            };
-            // Preload only if device for current user is unlocked
-            if (mKeyguardStateController.isShowing()) {
-                mActivityStarter.executeRunnableDismissingKeyguard(
-                        () -> mHandler.post(toggleRecents), null, true /* dismissShade */,
-                        false /* afterKeyguardGone */,
-                        true /* deferred */);
             } else {
-                toggleRecents.run();
+                launchDumbOsRecents("com.dumbos.launcher.ACTION_TOGGLE_RECENTS");
             }
+        };
+        if (mKeyguardStateController.isShowing()) {
+            mActivityStarter.executeRunnableDismissingKeyguard(
+                    () -> mHandler.post(toggleRecents), null, true /* dismissShade */,
+                    false /* afterKeyguardGone */,
+                    true /* deferred */);
+        } else {
+            toggleRecents.run();
+        }
+    }
+
+    private void launchDumbOsRecents(String action) {
+        if (mContext == null) {
+            return;
+        }
+        try {
+            Intent intent = new Intent(action);
+            intent.setClassName("com.dumbos.launcher", "com.dumbos.launcher.RecentsActivity");
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK
+                    | Intent.FLAG_ACTIVITY_SINGLE_TOP
+                    | Intent.FLAG_ACTIVITY_NO_ANIMATION);
+            mContext.startActivityAsUser(intent, UserHandle.CURRENT);
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to launch DumbOS RecentsActivity.", e);
         }
     }
 }
