@@ -244,17 +244,22 @@ public final class FontManagerService extends IFontManager.Stub {
         if (Flags.useOptimizedBoottimeFontLoading()) {
             Slog.i(TAG, "Using optimized boot-time font loading.");
             SystemServerInitThreadPool.submit(() -> {
-                initialize();
+                try {
+                    initialize();
 
-                // Set system font map only if there is updatable font directory.
-                // If there is no updatable font directory, `initialize` will have already loaded
-                // the system font map, so there's no need to set the system font map again here.
-                synchronized (mUpdatableFontDirLock) {
-                    if  (mUpdatableFontDir != null) {
-                        setSystemFontMap();
+                    // Set system font map only if there is updatable font directory.
+                    // If there is no updatable font directory, `initialize` will have already loaded
+                    // the system font map, so there's no need to set the system font map again here.
+                    synchronized (mUpdatableFontDirLock) {
+                        if (mUpdatableFontDir != null) {
+                            setSystemFontMap();
+                        }
                     }
+                } catch (Throwable t) {
+                    Slog.wtf(TAG, "Failed to initialize FontManagerService asynchronously", t);
+                } finally {
+                    serviceStarted.complete(null);
                 }
-                serviceStarted.complete(null);
             }, "FontManagerService_create");
         } else {
             Slog.i(TAG, "Not using optimized boot-time font loading.");
