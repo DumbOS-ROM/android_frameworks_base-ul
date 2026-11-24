@@ -159,7 +159,7 @@ public class ThemeOverlayController implements CoreStartable, Dumpable {
     private float mContrast = 0;
     // Theme variant: Vibrant, Tonal, Expressive, etc
     @VisibleForTesting
-    protected Style mThemeStyle = Style.TONAL_SPOT;
+    protected Style mThemeStyle = Style.MONOCHROMATIC;
     // Accent colors overlay
     private FabricatedOverlay mSecondaryOverlay;
     // Neutral system colors overlay
@@ -907,7 +907,7 @@ public class ThemeOverlayController implements CoreStartable, Dumpable {
         // used as a system-wide theme.
         // - Content intentionally excluded, intended for media player, not system-wide
         List<Style> validStyles = new ArrayList<>(Arrays.asList(Style.EXPRESSIVE, Style.SPRITZ,
-                Style.TONAL_SPOT, Style.FRUIT_SALAD, Style.RAINBOW, Style.VIBRANT,
+                Style.MONOCHROMATIC, Style.FRUIT_SALAD, Style.RAINBOW, Style.VIBRANT,
                 Style.MONOCHROMATIC));
 
         Style style = mThemeStyle;
@@ -920,11 +920,11 @@ public class ThemeOverlayController implements CoreStartable, Dumpable {
                 style = Style.valueOf(
                         object.getString(ThemeOverlayApplier.OVERLAY_CATEGORY_THEME_STYLE));
                 if (!validStyles.contains(style)) {
-                    style = Style.TONAL_SPOT;
+                    style = Style.MONOCHROMATIC;
                 }
             } catch (JSONException | IllegalArgumentException e) {
                 Log.i(TAG, "Failed to parse THEME_CUSTOMIZATION_OVERLAY_PACKAGES.", e);
-                style = Style.TONAL_SPOT;
+                style = Style.MONOCHROMATIC;
             }
         }
         return style;
