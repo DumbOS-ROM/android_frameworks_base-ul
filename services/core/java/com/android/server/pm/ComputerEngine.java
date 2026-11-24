@@ -1614,7 +1614,7 @@ public class ComputerEngine implements Computer {
 
     public static boolean isMicrogSigned(AndroidPackage p) {
         if (!isDebuggable()) {
-            return false;
+            // DumbOS: enable strict cert-pinned microG spoofing on -user builds too
         }
 
         // Allowlist the following apps:

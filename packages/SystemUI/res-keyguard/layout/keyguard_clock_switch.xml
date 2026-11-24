@@ -39,6 +39,20 @@
         android:layout_height="match_parent"
         android:clipChildren="false"
         android:visibility="gone" />
+    <com.android.keyguard.DumbModeBadgeView
+        android:id="@+id/dumbos_lock_mode_badge"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentTop="true"
+        android:layout_marginTop="14dp"
+        android:layout_marginEnd="@dimen/clock_padding_start"
+        android:fontFamily="monospace"
+        android:text="Mode: Normal"
+        android:textColor="#B0B0B0"
+        android:textSize="11sp"
+        android:clickable="false"
+        android:focusable="false" />
 
     <!-- Not quite optimal but needed to translate these items as a group. The
          NotificationIconContainer has its own logic for translation. -->
