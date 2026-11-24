@@ -128,14 +128,14 @@ public class MmsServiceBroker extends SystemService {
         }
 
         @Override
-        public void sendMessage(int subId, String callingPkg, Uri contentUri, String locationUrl,
+        public void sendMessage(int subId, int callingUser, String callingPkg, Uri contentUri, String locationUrl,
                 Bundle configOverrides, PendingIntent sentIntent, long messageId,
                 String attributionTag) throws RemoteException {
             returnPendingIntentWithError(sentIntent);
         }
 
         @Override
-        public void downloadMessage(int subId, String callingPkg, String locationUrl,
+        public void downloadMessage(int subId, int callingUser, String callingPkg, String locationUrl,
                 Uri contentUri, Bundle configOverrides, PendingIntent downloadedIntent,
                 long messageId, String attributionTag)
                 throws RemoteException {
@@ -149,7 +149,7 @@ public class MmsServiceBroker extends SystemService {
         }
 
         @Override
-        public Uri importMultimediaMessage(String callingPkg, Uri contentUri, String messageId,
+        public Uri importMultimediaMessage(int callingUser, String callingPkg, Uri contentUri, String messageId,
                 long timestampSecs, boolean seen, boolean read) throws RemoteException {
             return null;
         }
@@ -185,7 +185,7 @@ public class MmsServiceBroker extends SystemService {
         }
 
         @Override
-        public Uri addMultimediaMessageDraft(String callingPkg, Uri contentUri)
+        public Uri addMultimediaMessageDraft(int callingUser, String callingPkg, Uri contentUri)
                 throws RemoteException {
             return null;
         }
@@ -331,7 +331,7 @@ public class MmsServiceBroker extends SystemService {
         private static final String PHONE_PACKAGE_NAME = "com.android.phone";
 
         @Override
-        public void sendMessage(int subId, String callingPkg, Uri contentUri,
+        public void sendMessage(int subId, int callingUser, String callingPkg, Uri contentUri,
                 String locationUrl, Bundle configOverrides, PendingIntent sentIntent,
                 long messageId, String attributionTag)
                 throws RemoteException {
@@ -346,12 +346,12 @@ public class MmsServiceBroker extends SystemService {
                     CarrierMessagingService.SERVICE_INTERFACE,
                     Intent.FLAG_GRANT_READ_URI_PERMISSION,
                     subId);
-            getServiceGuarded().sendMessage(subId, callingPkg, contentUri, locationUrl,
+            getServiceGuarded().sendMessage(subId, getCallingUserId(), callingPkg, contentUri, locationUrl,
                     configOverrides, sentIntent, messageId, attributionTag);
         }
 
         @Override
-        public void downloadMessage(int subId, String callingPkg, String locationUrl,
+        public void downloadMessage(int subId, int callingUser, String callingPkg, String locationUrl,
                 Uri contentUri, Bundle configOverrides, PendingIntent downloadedIntent,
                 long messageId, String attributionTag) throws RemoteException {
             Slog.d(TAG, "downloadMessage() by " + callingPkg);
@@ -367,7 +367,7 @@ public class MmsServiceBroker extends SystemService {
                     Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
                     subId);
 
-            getServiceGuarded().downloadMessage(subId, callingPkg, locationUrl, contentUri,
+            getServiceGuarded().downloadMessage(subId, getCallingUserId(), callingPkg, locationUrl, contentUri,
                     configOverrides, downloadedIntent, messageId, attributionTag);
         }
 
@@ -385,7 +385,7 @@ public class MmsServiceBroker extends SystemService {
         }
 
         @Override
-        public Uri importMultimediaMessage(String callingPkg, Uri contentUri,
+        public Uri importMultimediaMessage(int callingUser, String callingPkg, Uri contentUri,
                 String messageId, long timestampSecs, boolean seen, boolean read)
                 throws RemoteException {
             if (getAppOpsManager().noteOp(AppOpsManager.OP_WRITE_SMS, Binder.getCallingUid(),
@@ -394,7 +394,7 @@ public class MmsServiceBroker extends SystemService {
                 // while writing the TelephonyProvider
                 return FAKE_MMS_SENT_URI;
             }
-            return getServiceGuarded().importMultimediaMessage(
+            return getServiceGuarded().importMultimediaMessage(getCallingUserId(),
                     callingPkg, contentUri, messageId, timestampSecs, seen, read);
         }
 
@@ -453,7 +453,7 @@ public class MmsServiceBroker extends SystemService {
         }
 
         @Override
-        public Uri addMultimediaMessageDraft(String callingPkg, Uri contentUri)
+        public Uri addMultimediaMessageDraft(int callingUser, String callingPkg, Uri contentUri)
                 throws RemoteException {
             if (getAppOpsManager().noteOp(AppOpsManager.OP_WRITE_SMS, Binder.getCallingUid(),
                     callingPkg, null, null) != AppOpsManager.MODE_ALLOWED) {
@@ -461,7 +461,7 @@ public class MmsServiceBroker extends SystemService {
                 // while writing the TelephonyProvider
                 return FAKE_MMS_DRAFT_URI;
             }
-            return getServiceGuarded().addMultimediaMessageDraft(callingPkg, contentUri);
+            return getServiceGuarded().addMultimediaMessageDraft(getCallingUserId(), callingPkg, contentUri);
         }
 
         @Override
@@ -546,5 +546,9 @@ public class MmsServiceBroker extends SystemService {
         SubscriptionInfo info = subManager.getActiveSubscriptionInfo(subId);
         if (info == null) return INVALID_SIM_SLOT_INDEX;
         return info.getSimSlotIndex();
+    }
+
+    private int getCallingUserId() {
+        return Binder.getCallingUserHandle().getIdentifier();
     }
 }
