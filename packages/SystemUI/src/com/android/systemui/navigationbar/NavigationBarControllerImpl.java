@@ -20,7 +20,6 @@ import static android.provider.Settings.Secure.ACCESSIBILITY_BUTTON_MODE_FLOATIN
 import static android.provider.Settings.Secure.ACCESSIBILITY_BUTTON_MODE_GESTURE;
 import static android.provider.Settings.Secure.ACCESSIBILITY_BUTTON_MODE_NAVIGATION_BAR;
 import static com.android.systemui.navigationbar.gestural.EdgeBackGestureHandler.DEBUG_MISSING_GESTURE_TAG;
-import static com.android.wm.shell.Flags.enableTaskbarNavbarUnification;
 
 import android.content.Context;
 import android.content.pm.ActivityInfo;
@@ -302,8 +301,8 @@ public class NavigationBarControllerImpl implements
 
     @VisibleForTesting
     boolean supportsTaskbar() {
-        // Enable for tablets, unfolded state on a foldable device or (non handheld AND flag is set)
-        return shouldShowTaskbar() || (!mIsPhone && enableTaskbarNavbarUnification());
+        // DumbOS: keep SystemUI NavigationBar active on all devices (DumbLauncher does not render a Taskbar window)
+        return false;
     }
 
     private final CommandQueue.Callbacks mCommandQueueCallbacks = new CommandQueue.Callbacks() {
